@@ -1,32 +1,40 @@
 package com.example.kotlin4_1
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.view.View
 import com.example.kotlin4_1.databinding.ActivityMainBinding
+import com.github.terrakok.cicerone.androidx.AppNavigator
+import moxy.MvpAppCompatActivity
+import moxy.ktx.moxyPresenter
 
-class MainActivity : AppCompatActivity(), MainView {
+class MainActivity : MvpAppCompatActivity(), MainView {
 
+    val navigator = AppNavigator(this, R.id.container)
+    private val presenter by moxyPresenter { MainPresenter(App.instance.router, AndroidScreens()) }
     private var vb: ActivityMainBinding? = null
-    val presenter = MainPresenter(this)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         vb = ActivityMainBinding.inflate(layoutInflater)
         setContentView(vb?.root)
-
-        vb?.btnCounter1?.setOnClickListener{presenter.counterClick(1)}
-        vb?.btnCounter2?.setOnClickListener{presenter.counterClick(2)}
-        vb?.btnCounter3?.setOnClickListener{presenter.counterClick(3)}
-
     }
-    //Подсказка к ПЗ: поделить на 3 отдельные функции и избавиться от index
-    // Оставляю исходный код, поскольку не пойму зачем делать как в подсказке
-    override fun setButtonText(index: Int, text: String) {
-        when(index){
-            0 -> vb?.btnCounter1?.text = text
-            1 -> vb?.btnCounter2?.text = text
-            2 -> vb?.btnCounter3?.text = text
+    override fun onResumeFragments() {
+        super.onResumeFragments()
+        App.instance.navigatorHolder.setNavigator(navigator)
+    }
+    override fun onPause() {
+        super.onPause()
+        App.instance.navigatorHolder.removeNavigator()
+    }
+    override fun onBackPressed() {
+        supportFragmentManager.fragments.forEach {
+            if(it is BackButtonListener && it.backPressed()){
+                return
+            }
         }
+        presenter.backClicked()
     }
+
+
 }
+
+
