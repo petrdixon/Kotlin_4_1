@@ -1,6 +1,7 @@
 package com.example.kotlin4_1
 
 import com.github.terrakok.cicerone.Router
+import io.reactivex.rxjava3.disposables.Disposable
 import moxy.MvpPresenter
 
 class UsersPresenter(val usersRepo: GithubUsersRepo, val router: Router, val screens: IScreens) : MvpPresenter<UsersView>() {
@@ -20,20 +21,33 @@ class UsersPresenter(val usersRepo: GithubUsersRepo, val router: Router, val scr
         viewState.init()
         loadData()
         usersListPresenter.itemClickListener = { itemView ->
-//TODO: переход на экран пользователя c помощью router.navigateTo
+            //TODO: переход на экран пользователя c помощью router.navigateTo
             val users2 = usersRepo.getUsers()
             router.navigateTo(screens.userInfo(users2[itemView.pos].login))
         }
     }
 
     fun loadData() {
-        val users = usersRepo.getUsers()
-        usersListPresenter.users.addAll(users)
-        viewState.updateList()
+        // RXJAVA получение списка пользователей
+        Producer().just()
+            .subscribe({ users ->
+                println("onNext: $users")
+                usersListPresenter.users.addAll(users)
+                viewState.updateList()
+            }, { e ->
+                println("onError: ${e.message}")
+            }, {
+                println("onComplete")
+            })
+
+//        val users = usersRepo.getUsers()
+//        usersListPresenter.users.addAll(users)
+//        viewState.updateList()
     }
 
     fun backPressed(): Boolean {
         router.exit()
         return true
     }
+
 }
